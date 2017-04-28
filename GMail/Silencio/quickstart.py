@@ -8,7 +8,7 @@ from oauth2client.file import Storage
 import learn
 from calendar import day_abbr
 from datetime import datetime
-import cPickle
+from sklearn.externals import joblib
 
 try:
     import argparse
@@ -153,9 +153,7 @@ def main():
 
     print(model)
 
-    with open('model.dat', 'wb') as f:
-        cPickle.dump(model, f)
-
+    joblib.dump(model, 'model.dat')
 
 if __name__ == '__main__':
     main()
