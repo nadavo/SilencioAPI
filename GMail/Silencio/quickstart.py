@@ -51,7 +51,7 @@ def calculatePriority(stats,entry):
         return 2
     elif emailSpam < 0.1:
         return 1
-    elif stats['from'][emailFrom] >= num_msg*0.01 and emailSpam >= 0.1:
+    elif stats['from'][emailFrom] >= num_msg*0.1 or emailSpam >= 0.1:
         return 3
     else:
         return 2
@@ -111,7 +111,7 @@ def main():
                 else:
                     date = datetime.strptime(helper, '%a %d %b %Y %H:%M:%S')
                 emailHour = date.hour
-                emailDay = date.day
+                emailDay = date.weekday
                 # print(emailDate)
                 # print(emailDay)
                 # print(emailHour)
