@@ -5,6 +5,8 @@ from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
+import learn
+from calendar import day_abbr
 
 try:
     import argparse
@@ -39,37 +41,101 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
+def calculatePriority(stats,entry):
+    emailFrom = entry['from']
+    emailSpam = entry['spam']
+    num_msg=stats['num_messages']
+    if emailSpam == -1:
+        return 2
+    elif emailSpam < 0.1:
+        return 1
+    elif stats['from'][emailFrom] >= num_msg*0.01 and emailSpam >= 0.1:
+        return 3
+    else:
+        return 2
+
+
+def countFrequency(dict, key, value):
+    if dict[key].get(value, False) is False:
+        dict[key][value] = 1
+    else:
+        count = dict[key][value] + 1
+        dict[key][value] = count
+
+
+def top_entries(dict, num):
+    return sorted(dict, key=dict.get, reverse=True)[:num]
+
 
 def main():
-    threads = []
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('gmail', 'v1', http=http)
 
-    results = service.users().messages().list(userId='me').execute()
+    # two_weeks_ago = datetime.utcnow() - timedelta(days=14)
+    # two_weeks_ago = (two_weeks_ago - datetime.utcfromtimestamp(0)).total_seconds()*1000
+    # print (two_weeks_ago)
 
-    # results = service.users().labels().list(userId='me').execute()
+    results = service.users().messages().list(userId='me', maxResults=1000, q="newer_than:30d").execute()
     messages = results.get('messages', [])
+    NUM_MESSAGES = len(messages)
+    print(NUM_MESSAGES)
+
+    dataset = {}
+    stats = {'num_messages': NUM_MESSAGES, 'from': {}, 'spam': {}, 'priority': {}}
+    from_encode = {}
+    from_id = 1
+    for message in messages:
+        message_req = service.users().messages().get(userId='me', id=message['id']).execute()
+        m_id = message_req['id']
+        spamProb = -1.0
+        for item in message_req['payload']['headers']:
+            if item['name'] == 'From':
+                emailFrom = item.get('value')
+            elif item['name'] == 'Date':
+                emailDate = str(item.get('value')) #Fri, 28 Apr 2017 00:01:56 +0000
+                helper = emailDate.split(' ')
+                helper.pop()
+                emailDayText = helper[0].replace(',', '')
+                emailTime = helper[-1].split(':')
+                emailHour = int(emailTime[0])
+                emailDay = list(day_abbr).index(emailDayText)
+
+
+            elif item['name'] == 'Subject':
+                emailSubject = item.get('value')
+            elif item['name'] == 'SpamDiagnosticOutput':
+                emailSpamDiagnosticOutput = item.get('value').split(':')
+                spamProb = float(emailSpamDiagnosticOutput[0])/float(emailSpamDiagnosticOutput[1])
+
+        dataset[m_id] = {'labelIDs': len(message_req['labelIds']),
+                         'day': emailDay,
+                         'hour': emailHour,
+                         'from': emailFrom,
+                         'subject': len(emailSubject),
+                         'spam': spamProb
+                         }
+
+        countFrequency(stats, 'from', emailFrom)
+        countFrequency(stats, 'spam', spamProb)
+
+        for item in stats['from']:
+            from_encode[item] = from_id
+            from_id += 1
+
 
     for message in messages:
         message_req = service.users().messages().get(userId='me', id=message['id']).execute()
-        threads.append(message_req)
+        m_id = message_req['id']
+        dataset[m_id]['notification_priority'] = calculatePriority(stats, dataset[m_id])
+        countFrequency(stats, 'priority', dataset[m_id]['notification_priority'])
 
-    print(len(threads))
+    print(stats)
+    print(dataset)
 
-    for thread in threads:
-        print('Thread ID: %s' % thread['labelIds'])
-        # headers = message_req['payload']['headers']['name']
-        # for header in headers:
-        #     print(header['name'])
-        # print('Message snippet: %s' % message_req['threadId'])
 
-    # if not labels:
-    #     print('No labels found.')
-    # else:
-    #   print('Labels:')
-    #   for label in labels:
-    #     print(label)
+    model = learn.createModel(dataset, from_encode)
+
 
 
 if __name__ == '__main__':
