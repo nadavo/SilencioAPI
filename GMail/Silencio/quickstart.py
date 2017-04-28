@@ -46,11 +46,12 @@ def get_credentials():
 def calculatePriority(stats,entry):
     emailFrom = entry['from']
     emailSpam = entry['spam']
+    emailSubject = entry['subject']
     num_msg=stats['num_messages']
-    if emailSpam == -1:
-        return 2
-    elif emailSpam < 0.1:
+    if (emailSpam != -1 and emailSpam < 0.1) or emailSubject < 8:
         return 1
+    elif emailSpam == -1:
+        return 2
     elif stats['from'][emailFrom] >= num_msg*0.1 or emailSpam >= 0.1:
         return 3
     else:
