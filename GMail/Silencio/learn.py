@@ -1,4 +1,4 @@
-from sklearn.model_selection import train_test_split, KFold, cross_val_score
+from sklearn.model_selection import train_test_split, KFold, cross_val_score, cross_val_predict
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.datasets import make_blobs
@@ -37,9 +37,9 @@ def createModel(dataset, from_encode):
     print(classification_report(Y_test, predictions))
     # results = []
     # kfold = KFold(n_splits=10, random_state=2)
-    # cv_results = cross_val_score(RandomForestClassifier(), X_train, Y_train, cv=kfold)
+    # predictions = cross_val_results(RandomForestClassifier(), X_train, Y_train, cv=kfold)
     # results.append(cv_results)
     # print(results)
     # msg = "%f (%f)" % (cv_results.mean(), cv_results.std())
     # print(msg)
-    return predictions
+    return clf

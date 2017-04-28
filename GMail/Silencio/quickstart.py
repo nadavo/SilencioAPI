@@ -8,7 +8,7 @@ from oauth2client.file import Storage
 import learn
 from calendar import day_abbr
 from datetime import datetime
-import parsedatetime
+import cPickle
 
 try:
     import argparse
@@ -96,7 +96,7 @@ def main():
                 emailFrom = item.get('value')
             elif item['name'] == 'Date':
                 emailDate = str(item.get('value')) #Fri, 28 Apr 2017 00:01:56 +0000
-                cal = parsedatetime.Calendar()
+                #cal = parsedatetime.Calendar()
                 # result = cal.parse(emailDate)[0][:10]
                 # print(result)
                 helper = emailDate.split(' ')
@@ -149,13 +149,12 @@ def main():
     print(stats)
     print(dataset)
 
+    model = learn.createModel(dataset, from_encode)
 
-    predictions = learn.createModel(dataset, from_encode)
+    print(model)
 
-    print(predictions)
-
-    with open('modelfile', 'w') as data_file:
-        data_file.write(predictions)
+    with open('model.dat', 'wb') as f:
+        cPickle.dump(model, f)
 
 
 if __name__ == '__main__':
