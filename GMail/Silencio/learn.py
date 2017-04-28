@@ -37,8 +37,9 @@ def createModel(dataset, from_encode):
     print(classification_report(Y_test, predictions))
     # results = []
     # kfold = KFold(n_splits=10, random_state=2)
-    # cv_results = cross_val_score(RandomForestClassifier(), X_train, Y_train, cv=kfold, scoring=scoring)
+    # cv_results = cross_val_score(RandomForestClassifier(), X_train, Y_train, cv=kfold)
     # results.append(cv_results)
-    # names.append(name)
-    # msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
-    return data
+    # print(results)
+    # msg = "%f (%f)" % (cv_results.mean(), cv_results.std())
+    # print(msg)
+    return predictions
