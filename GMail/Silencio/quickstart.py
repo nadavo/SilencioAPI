@@ -152,6 +152,8 @@ def main():
 
     predictions = learn.createModel(dataset, from_encode)
 
+    print(predictions)
+
     with open('modelfile', 'w') as data_file:
         data_file.write(predictions)
 
