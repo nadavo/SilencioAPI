@@ -7,6 +7,8 @@ from oauth2client import tools
 from oauth2client.file import Storage
 import learn
 from calendar import day_abbr
+from datetime import datetime
+import parsedatetime
 
 try:
     import argparse
@@ -94,12 +96,25 @@ def main():
                 emailFrom = item.get('value')
             elif item['name'] == 'Date':
                 emailDate = str(item.get('value')) #Fri, 28 Apr 2017 00:01:56 +0000
+                cal = parsedatetime.Calendar()
+                # result = cal.parse(emailDate)[0][:10]
+                # print(result)
                 helper = emailDate.split(' ')
                 helper.pop()
-                emailDayText = helper[0].replace(',', '')
-                emailTime = helper[-1].split(':')
-                emailHour = int(emailTime[0])
-                emailDay = list(day_abbr).index(emailDayText)
+                while ':' not in helper[-1]:
+                    helper.pop()
+                helper = ' '.join(helper)
+                if ',' in helper:
+                    date = datetime.strptime(helper, '%a, %d %b %Y %H:%M:%S')
+                elif helper[0] not in list(day_abbr):
+                    date = datetime.strptime(helper, '%d %b %Y %H:%M:%S')
+                else:
+                    date = datetime.strptime(helper, '%a %d %b %Y %H:%M:%S')
+                emailHour = date.hour
+                emailDay = date.day
+                # print(emailDate)
+                # print(emailDay)
+                # print(emailHour)
 
 
             elif item['name'] == 'Subject':
