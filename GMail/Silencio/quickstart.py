@@ -152,9 +152,9 @@ def main():
 
     model = learn.createModel(dataset, from_encode)
 
-    print(model)
+    print(model.coef_)
 
-    joblib.dump(model, 'model.dat')
+    joblib.dump(model.coef_, 'model_coef.dat')
 
 if __name__ == '__main__':
     main()
