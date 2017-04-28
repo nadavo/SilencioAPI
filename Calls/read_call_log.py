@@ -5,14 +5,16 @@ import datetime
 import re
 import csv
 from sklearn import svm
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.model_selection import train_test_split
 
 MISSED = 'Missed'
 MISSED_O = 'Missed-O'
 INCOMING = 'Incoming'
 
-MISSED_CL = 1
+MISSED_CL = 3
 MISSED_O_CL = 2
-INCOMING_CL = 3
+INCOMING_CL = 1
 
 class calls_log_parser:
     class Call:
@@ -22,6 +24,7 @@ class calls_log_parser:
             self._type = c_type
             self._time = time
             self._contact_id = contact_id
+            self.vec = []
             # self.parse_time_str(time)
 
 
@@ -45,16 +48,14 @@ class calls_log_parser:
                    + ", type: " + str(self._type) + ", time: " + str(self._time)
 
         def get_vec(self):
-            vec = [self._number]
+            self.vec = [self._number]
             if self._contact_id == 'UNKNOWN':
-                vec.append(0)
+                self.vec.append(0)
             else:
-                vec.append(1)
-            vec.append(self._time.weekday())
+                self.vec.append(1)
+            self.vec.append(self._time.weekday())
             h = (self._time - self._time.replace(hour=0, minute=0, second=0)).seconds / 3600
-            vec.append(h)
-
-            return vec
+            self.vec.append(h)
 
 
 
@@ -65,7 +66,6 @@ class calls_log_parser:
         self.file_reader = csv.reader(self.calls_file)
         self.calls = []
         self.parse_calls()
-        self.clf = svm.SVC(decision_function_shape='ovo')
 
     def add_call(self, call):
         self.calls.append(call)
@@ -109,7 +109,8 @@ class calls_log_parser:
             if c.get_number() in phone_dict.keys():
                 continue
             else:
-                phone_dict[c.get_number()] = i+1
+                i += 1
+                phone_dict[c.get_number()] = i
         return phone_dict
 
     def create_name_dict(self):
@@ -134,14 +135,21 @@ class calls_log_parser:
         X = []
         # x_m = []
         for i in range(len(batch)):
-            batch[i].get_vec()[0] = p_dict[batch[i].get_vec()[0]]
-            X.append(batch[i].get_vec())
+            batch[i].get_vec()
+            batch[i].vec[0] = p_dict[batch[i].get_number()]
+            X.append(batch[i].vec)
             # x_m.append(batch[i].get_type())
             if batch[i].get_type() == MISSED: Y.append(MISSED_CL)
             elif batch[i].get_type() == MISSED_O:Y.append(MISSED_O_CL)
             else: Y.append(INCOMING_CL)
-
-        self.clf.fit(X, Y)
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=10)
+        self.clf = svm.SVC(kernel='linear')
+        self.clf.fit(X_train, Y_train)
+        self.predictions = self.clf.predict(X_test)
+        print(accuracy_score(Y_test, self.predictions))
+        print(confusion_matrix(Y_test, self.predictions))
+        print(classification_report(Y_test, self.predictions))
+        return
 
     def predict(self,vec):
         return self.clf.predict([vec])
