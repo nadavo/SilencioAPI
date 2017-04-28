@@ -111,10 +111,11 @@ def main():
                 else:
                     date = datetime.strptime(helper, '%a %d %b %Y %H:%M:%S')
                 emailHour = date.hour
-                emailDay = date.weekday
+                emailDay = date.weekday()
                 # print(emailDate)
                 # print(emailDay)
                 # print(emailHour)
+                # return
 
 
             elif item['name'] == 'Subject':
@@ -124,8 +125,8 @@ def main():
                 spamProb = float(emailSpamDiagnosticOutput[0])/float(emailSpamDiagnosticOutput[1])
 
         dataset[m_id] = {'labelIDs': len(message_req['labelIds']),
-                         'day': emailDay,
-                         'hour': emailHour,
+                         'day': int(emailDay),
+                         'hour': int(emailHour),
                          'from': emailFrom,
                          'subject': len(emailSubject),
                          'spam': spamProb
@@ -149,8 +150,10 @@ def main():
     print(dataset)
 
 
-    model = learn.createModel(dataset, from_encode)
+    predictions = learn.createModel(dataset, from_encode)
 
+    with open('modelfile', 'w') as data_file:
+        data_file.write(predictions)
 
 
 if __name__ == '__main__':
